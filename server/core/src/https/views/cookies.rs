@@ -15,7 +15,9 @@ fn new_cookie<'a>(state: &'_ ServerState, ck_id: &'a str, value: String) -> Cook
     // We set a domain here because it allows subdomains
     // of the idm to share the cookie. If domain was incorrect
     // then webauthn won't work anyway!
-    token_cookie.set_domain(state.domain.clone());
+    if let Some(d) = &state.cookie_domain {
+        token_cookie.set_domain(d.clone());
+    }
     token_cookie.set_path("/");
     token_cookie
 }
@@ -27,7 +29,9 @@ pub fn destroy(jar: CookieJar, ck_id: &str, state: &ServerState) -> CookieJar {
         removal_cookie.make_removal();
 
         // Need to be set to domain else the cookie isn't removed!
-        removal_cookie.set_domain(state.domain.clone());
+        if let Some(d) = &state.cookie_domain {
+            removal_cookie.set_domain(d.clone());
+        }
 
         // Need to be set to / to remove on all parent paths.
         // If you don't set a path, NOTHING IS REMOVED!!!

@@ -172,7 +172,17 @@ impl IdmServer {
         };
 
         // Check that it gels with our origin.
-        let valid = origin
+        // keelOS fork: an IP-literal origin is accepted; passkeys are then unusable.
+        let origin_is_ip = matches!(
+            origin.host(),
+            Some(url::Host::Ipv4(_)) | Some(url::Host::Ipv6(_))
+        );
+        if origin_is_ip {
+            admin_warn!("origin is an IP address: passkeys/webauthn are unavailable (keelOS fork)");
+        }
+
+        let valid = origin_is_ip
+            || origin
             .domain()
             .map(|effective_domain| {
                 // We need to prepend the '.' here to ensure that myexample.com != example.com,
@@ -194,7 +204,17 @@ impl IdmServer {
             return Err(OperationError::InvalidState);
         };
 
-        let webauthn = WebauthnBuilder::new(&rp_id, origin)
+        // webauthn-rs refuses an IP origin, so give it a substitute origin built from the rp_id.
+        let wa_origin: Url = if origin_is_ip {
+            Url::parse(&format!("https://{rp_id}")).map_err(|e| {
+                admin_error!("Unable to build webauthn substitute origin - {:?}", e);
+                OperationError::InvalidState
+            })?
+        } else {
+            origin.clone()
+        };
+
+        let webauthn = WebauthnBuilder::new(&rp_id, &wa_origin)
             .and_then(|builder| builder.allow_subdomains(true).rp_name(&rp_name).build())
             .map_err(|e| {
                 admin_error!("Invalid Webauthn Configuration - {:?}", e);

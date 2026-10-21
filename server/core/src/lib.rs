@@ -704,10 +704,9 @@ pub fn cert_generate_core(config: &Configuration) {
 
     let origin_domain = match config.origin.domain() {
         Some(val) => val,
-        None => {
-            error!("origin does not contain a valid domain");
-            std::process::exit(1);
-        }
+        // keelOS fork: for an IP-literal origin use the domain name instead. The generated
+        // cert then lacks an IP SAN; supply a real cert for IP use.
+        None => config.domain.as_str(),
     };
 
     let cert_root = match tls_key_path.parent() {

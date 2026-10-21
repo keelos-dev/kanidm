@@ -2979,7 +2979,9 @@ fn auth_session_state_management(
                             // We set a domain here because it allows subdomains
                             // of the idm to share the cookie. If domain was incorrect
                             // then webauthn won't work anyway!
-                            bearer_cookie.set_domain(state.domain.clone());
+                            if let Some(d) = &state.cookie_domain {
+                                bearer_cookie.set_domain(d.clone());
+                            }
                             bearer_cookie.set_path("/");
                             jar = jar
                                 .add(bearer_cookie)

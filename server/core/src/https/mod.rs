@@ -76,7 +76,6 @@ pub struct ServerState {
     pub(crate) csp_header: HeaderValue,
     pub(crate) csp_header_no_form_action: HeaderValue,
     pub(crate) origin: Url,
-    pub(crate) domain: String,
     /// None when the origin host is an IP literal: cookies are then host-only.
     pub(crate) cookie_domain: Option<String>,
     // This is set to true by default, and is only false on integration tests.
@@ -298,7 +297,6 @@ pub async fn create_https_server(
         csp_header,
         csp_header_no_form_action,
         origin: config.origin,
-        domain: config.domain.clone(),
         cookie_domain,
         secure_cookies: config.integration_test_config.is_none(),
         logging_pipeline,

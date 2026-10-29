@@ -125,6 +125,12 @@ async fn setup_qs_idms(
         .initialise_helper(curtime, DOMAIN_TGT_LEVEL)
         .await?;
 
+    // keelOS fork: the administrator's password rules, before anything checks a password
+    if let Some((min_length, min_score)) = config.keel_password_policy {
+        kanidmd_lib::idm::password_policy::set(kanidmd_lib::idm::password_policy::KeelPasswordPolicy { min_length, min_score });
+        info!(min_length, min_score, "password policy from the configuration (keelOS fork)");
+    }
+
     // We generate a SINGLE idms only!
     let is_integration_test = config.integration_test_config.is_some();
     let (idms, idms_delayed, idms_audit) = IdmServer::new(

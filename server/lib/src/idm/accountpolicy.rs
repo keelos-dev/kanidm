@@ -176,10 +176,12 @@ impl ResolvedAccountPolicy {
 
         // Per NIST, if a password can be used as a single factor authenticator,
         // then we need to set the minimum length to a greater value.
+        // keelOS fork: the floor is the administrator's (password_policy), 15 by default
+        let sfa_floor = crate::idm::password_policy::get().min_length;
         if accumulate.credential_policy < CredentialType::Mfa
-            && accumulate.pw_min_length < PW_SFA_MIN_LENGTH_NIST
+            && accumulate.pw_min_length < sfa_floor
         {
-            accumulate.pw_min_length = PW_SFA_MIN_LENGTH_NIST;
+            accumulate.pw_min_length = sfa_floor;
         }
 
         accumulate

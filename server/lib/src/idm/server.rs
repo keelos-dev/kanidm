@@ -1825,9 +1825,11 @@ impl IdmServerProxyWriteTransaction<'_> {
     ) -> Result<(), OperationError> {
         // password strength and badlisting is always global, rather than per-pw-policy.
         // pw-policy as check on the account is about requirements for mfa for example.
-        if cleartext.len() < PW_SFA_MIN_LENGTH_NIST as usize {
+        // keelOS fork: the administrator's minimum length (Kanidm: 15 for every unix password)
+        let min_len = crate::idm::password_policy::get().min_length;
+        if cleartext.len() < min_len as usize {
             return Err(OperationError::PasswordQuality(vec![
-                PasswordFeedback::TooShort(PW_SFA_MIN_LENGTH_NIST),
+                PasswordFeedback::TooShort(min_len),
             ]));
         } else if cleartext.len() > PW_MAX_LENGTH_NIST as usize {
             return Err(OperationError::PasswordQuality(vec![
@@ -1839,19 +1841,17 @@ impl IdmServerProxyWriteTransaction<'_> {
 
         let entropy = zxcvbn(cleartext, related_inputs);
 
-        // Unix PW's are a single factor, so we enforce good pws
-        if entropy.score() < Score::Four {
+        // Unix PW's are a single factor, so we enforce good pws (keelOS fork: as strong as asked)
+        if crate::idm::password_policy::too_weak(entropy.score()) {
             // The password is too week as per:
             // https://docs.rs/zxcvbn/2.0.0/zxcvbn/struct.Entropy.html
-            let feedback: zxcvbn::feedback::Feedback = entropy
-                .feedback()
-                .ok_or(OperationError::InvalidState)
-                .cloned()
-                .inspect_err(|err| {
-                    security_info!(?err, "zxcvbn returned no feedback when score < 3");
-                })?;
-
-            security_info!(?feedback, "pw quality feedback");
+            // keelOS fork: zxcvbn gives no feedback for a score-3 password; that used to be
+            // answered InvalidState (a 500 to the caller setting a unix password), now it is a
+            // password-quality refusal like the others.
+            match entropy.feedback() {
+                Some(feedback) => security_info!(?feedback, "pw quality feedback"),
+                None => security_info!("zxcvbn returned no feedback (score 3): refused as too weak"),
+            }
 
             // return Err(OperationError::PasswordTooWeak(feedback))
             // return Err(OperationError::PasswordTooWeak);

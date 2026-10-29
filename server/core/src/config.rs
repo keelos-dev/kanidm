@@ -347,6 +347,9 @@ pub struct ServerConfig {
     repl_config: Option<ReplicationConfiguration>,
     /// An optional OpenTelemetry collector (GRPC) url to send trace and log data to, eg `localhost:4317`. If not set, disables the feature.
     otel_grpc_endpoint: Option<String>,
+    // keelOS fork: the administrator's password rules (idm::password_policy)
+    keel_password_min_length: Option<u32>,
+    keel_password_min_score: Option<u8>,
 }
 
 impl ServerConfigUntagged {
@@ -434,6 +437,9 @@ pub struct ServerConfigV2 {
     #[serde(rename = "replication")]
     repl_config: Option<ReplicationConfiguration>,
     otel_grpc_endpoint: Option<String>,
+    // keelOS fork: the administrator's password rules (idm::password_policy)
+    keel_password_min_length: Option<u32>,
+    keel_password_min_score: Option<u8>,
 }
 
 #[derive(Debug, Clone)]
@@ -483,6 +489,8 @@ pub struct Configuration {
     /// This allows internally setting some unsafe options for replication.
     pub integration_repl_config: Option<Box<IntegrationReplConfig>>,
     pub otel_grpc_endpoint: Option<String>,
+    /// keelOS fork: (minimum length, minimum zxcvbn score) when the configuration says so
+    pub keel_password_policy: Option<(u32, u8)>,
 }
 
 impl Configuration {
@@ -515,6 +523,7 @@ impl Configuration {
             role: None,
             repl_config: None,
             otel_grpc_endpoint: None,
+            keel_password_policy: None,
         }
     }
 
@@ -543,6 +552,7 @@ impl Configuration {
             repl_config: None,
             integration_repl_config: None,
             otel_grpc_endpoint: None,
+            keel_password_policy: None,
         }
     }
 }
@@ -654,6 +664,8 @@ pub struct ConfigurationBuilder {
     log_level: Option<LogLevel>,
     repl_config: Option<ReplicationConfiguration>,
     otel_grpc_endpoint: Option<String>,
+    // keelOS fork: the administrator's password rules (idm::password_policy)
+    keel_password_policy: Option<(u32, u8)>,
 }
 
 impl ConfigurationBuilder {
@@ -892,6 +904,15 @@ impl ConfigurationBuilder {
             self.otel_grpc_endpoint = config.otel_grpc_endpoint;
         }
 
+        // keelOS fork: either value alone keeps Kanidm's default for the other
+        if config.keel_password_min_length.is_some() || config.keel_password_min_score.is_some() {
+            let d = kanidmd_lib::idm::password_policy::KeelPasswordPolicy::default();
+            self.keel_password_policy = Some((
+                config.keel_password_min_length.unwrap_or(d.min_length),
+                config.keel_password_min_score.unwrap_or(d.min_score).min(4),
+            ));
+        }
+
         self
     }
 
@@ -980,6 +1001,15 @@ impl ConfigurationBuilder {
             self.otel_grpc_endpoint = config.otel_grpc_endpoint;
         }
 
+        // keelOS fork: either value alone keeps Kanidm's default for the other
+        if config.keel_password_min_length.is_some() || config.keel_password_min_score.is_some() {
+            let d = kanidmd_lib::idm::password_policy::KeelPasswordPolicy::default();
+            self.keel_password_policy = Some((
+                config.keel_password_min_length.unwrap_or(d.min_length),
+                config.keel_password_min_score.unwrap_or(d.min_score).min(4),
+            ));
+        }
+
         self
     }
 
@@ -1014,6 +1044,7 @@ impl ConfigurationBuilder {
             log_level,
             repl_config,
             otel_grpc_endpoint,
+            keel_password_policy,
         } = self;
 
         let tls_config = match (tls_key, tls_chain, tls_client_ca) {
@@ -1079,6 +1110,7 @@ impl ConfigurationBuilder {
             log_level,
             repl_config,
             otel_grpc_endpoint,
+            keel_password_policy,
             integration_repl_config: None,
             integration_test_config: None,
         })

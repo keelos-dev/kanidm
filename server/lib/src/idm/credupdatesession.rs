@@ -29,7 +29,7 @@ use webauthn_rs::prelude::{
     AttestedPasskey as AttestedPasskeyV4, AttestedPasskeyRegistration, CreationChallengeResponse,
     Passkey as PasskeyV4, PasskeyRegistration, RegisterPublicKeyCredential, WebauthnError,
 };
-use zxcvbn::{zxcvbn, Score};
+use zxcvbn::zxcvbn;
 
 // A user can take up to 15 minutes to update their credentials before we automatically
 // cancel on them.

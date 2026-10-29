@@ -35,7 +35,7 @@ use compact_jwt::{Jwk, JwsCompact};
 use concread::bptree::{BptreeMap, BptreeMapReadTxn, BptreeMapWriteTxn};
 use concread::cowcell::CowCellReadTxn;
 use concread::hashmap::{HashMap, HashMapReadTxn, HashMapWriteTxn};
-use kanidm_lib_crypto::{CryptoPolicy, PW_MAX_LENGTH_NIST, PW_SFA_MIN_LENGTH_NIST};
+use kanidm_lib_crypto::{CryptoPolicy, PW_MAX_LENGTH_NIST};
 use kanidm_proto::internal::{
     ApiToken, CredentialStatus, PasswordFeedback, RadiusAuthToken, ScimSyncToken, UatPurpose,
     UserAuthToken,
@@ -51,7 +51,7 @@ use tokio::sync::{Mutex, Semaphore};
 use tracing::trace;
 use url::Url;
 use webauthn_rs::prelude::{Webauthn, WebauthnBuilder};
-use zxcvbn::{zxcvbn, Score};
+use zxcvbn::zxcvbn;
 
 #[cfg(test)]
 use crate::idm::event::PasswordChangeEvent;

@@ -1,6 +1,6 @@
 use crate::prelude::*;
 use crate::value::CredentialType;
-use kanidm_lib_crypto::{PW_MAX_LENGTH_NIST, PW_MFA_MIN_LENGTH, PW_SFA_MIN_LENGTH_NIST};
+use kanidm_lib_crypto::{PW_MAX_LENGTH_NIST, PW_MFA_MIN_LENGTH};
 use webauthn_rs::prelude::AttestationCaList;
 
 #[derive(Clone)]

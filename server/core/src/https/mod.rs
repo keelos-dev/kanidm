@@ -283,10 +283,13 @@ pub async fn create_https_server(
         }
     };
 
-    let cookie_domain = match config.origin.host() {
-        Some(url::Host::Domain(_)) => Some(config.domain.clone()),
-        _ => None,
-    };
+    // keelOS: host-only cookies. Upstream sets Domain=<domain> so subdomains can share the
+    // cookie; a browser then drops the cookie when the page was reached by the LAN address
+    // (or any other name), and the login dies at the password step with
+    // InvalidAuthState("session id not present in cred to 'cred' step"). keelAuth has no
+    // subdomains, and its users reach it by whatever address they have.
+    let cookie_domain: Option<String> = None;
+    let _ = config.origin.host();
 
     let state = ServerState {
         status_ref,
